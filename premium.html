@@ -517,7 +517,8 @@ async function doReading(){
   showLoading('reading-result');
   const prompt=`名前:${name}、性別:${gender}、生年月日:${bd}${bt?'、出生時刻:'+bt:''}
 年柱:${pillars.year.kan}${pillars.year.chi}、月柱:${pillars.month.kan}${pillars.month.chi}、日柱:${pillars.day.kan}${pillars.day.chi}
-算命学で命式・宿命・恋愛運・仕事運・金運・健康運・年間運を詳しく鑑定してください。`;
+算命学で命式・宿命・恋愛運・仕事運・金運・健康運・年間運を詳しく鑑定してください。
+今日の日付は2026年5月11日です。今後1年とは2026年5月〜2027年5月のことです。`;
   try{const r=await callAPI(prompt);setCache(key,r);render(r);}
   catch(e){document.getElementById('reading-result').innerHTML='<div class="result-card"><div class="result-body">エラーが発生しました。</div></div>';}
 }
