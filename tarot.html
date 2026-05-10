@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIタロット占い</title>
+<style>
+body{font-family:'Hiragino Kaku Gothic ProN',sans-serif;background:#faf8f5;color:#2c1810;margin:0;padding:20px;}
+.wrap{max-width:640px;margin:0 auto;}
+h1{text-align:center;color:#b8860b;font-size:24px;margin:32px 0 8px;}
+.sub{text-align:center;color:#8a7060;font-size:12px;margin-bottom:32px;}
+.back{display:block;text-align:center;color:#8a7060;font-size:12px;margin-bottom:20px;text-decoration:none;}
+.spread-wrap{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+.spread-btn{background:#fff;border:2px solid #e8e0d0;border-radius:12px;padding:16px;text-align:center;cursor:pointer;}
+.spread-btn.on{border-color:#b8860b;background:#fff9ee;}
+.spread-btn p{font-size:13px;font-weight:700;margin:8px 0 4px;}
+.spread-btn small{font-size:11px;color:#8a7060;}
+.card{background:#fff;border:1px solid #e8e0d0;border-radius:12px;padding:20px;margin-bottom:16px;}
+.card label{display:block;font-size:11px;color:#8a7060;margin-bottom:6px;}
+.card input,.card textarea{width:100%;border:1px solid #e8e0d0;border-radius:6px;padding:9px 12px;font-size:14px;font-family:inherit;background:#faf8f5;box-sizing:border-box;}
+.card textarea{height:80px;resize:vertical;}
+.btn{width:100%;padding:14px;background:#2c1810;color:#f5e6c0;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-top:8px;font-family:inherit;}
+.btn:hover{background:#4a2c1a;}
+.cards-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:20px 0;}
+.tc{background:#2c1810;border:2px solid #b8860b;border-radius:8px;padding:10px 8px;text-align:center;min-width:80px;}
+.tc-pos{font-size:9px;color:rgba(245,230,192,0.6);margin-bottom:6px;}
+.tc-em{font-size:24px;display:block;margin-bottom:6px;}
+.tc-name{font-size:10px;color:#f5e6c0;}
+.tc-rev{font-size:9px;color:#c85050;margin-top:3px;}
+.result{background:#fff;border:1px solid #e8e0d0;border-radius:12px;margin-bottom:12px;overflow:hidden;}
+.rh{background:linear-gradient(90deg,#2c1810,#4a2c1a);padding:12px 16px;color:#f5e6c0;font-size:12px;letter-spacing:0.2em;}
+.rb{padding:16px;font-size:14px;line-height:2;}
+.loading{text-align:center;padding:40px;color:#b8860b;font-size:13px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🃏 タロット占い</h1>
+  <p class="sub">会員専用 · PREMIUM</p>
+  <a href="/premium.html" class="back">← 算命学鑑定に戻る</a>
+
+  <div class="spread-wrap">
+    <div class="spread-btn on" id="b3" onclick="sel('3')">
+      <div style="font-size:24px">🃏</div>
+      <p>3枚引き</p>
+      <small>過去・現在・未来</small>
+    </div>
+    <div class="spread-btn" id="bc" onclick="sel('c')">
+      <div style="font-size:24px">✨</div>
+      <p>ケルトクロス</p>
+      <small>10枚の本格鑑定</small>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="margin-bottom:16px">
+      <label>お名前</label>
+      <input type="text" id="nm" placeholder="山田 花子">
+    </div>
+    <div>
+      <label>占いたいこと・ご質問</label>
+      <textarea id="q" placeholder="例：仕事を変えるべきか迷っています。&#10;例：彼との関係はどうなりますか？"></textarea>
+    </div>
+    <button class="btn" onclick="go()">✦ カードを引く ✦</button>
+  </div>
+
+  <div id="out"></div>
+</div>
+
+<script>
+var sp='3';
+function sel(t){
+  sp=t;
+  document.getElementById('b3').className='spread-btn'+(t==='3'?' on':'');
+  document.getElementById('bc').className='spread-btn'+(t==='c'?' on':'');
+  document.getElementById('out').innerHTML='';
+}
+
+var MJ=[
+  {n:'愚者',e:'🌟'},{n:'魔術師',e:'🪄'},{n:'女教皇',e:'🌙'},{n:'女帝',e:'🌺'},
+  {n:'皇帝',e:'👑'},{n:'法王',e:'⛪'},{n:'恋人たち',e:'❤️'},{n:'戦車',e:'🏆'},
+  {n:'力',e:'🦁'},{n:'隠者',e:'🕯️'},{n:'運命の輪',e:'☸️'},{n:'正義',e:'⚖️'},
+  {n:'吊られた男',e:'🔮'},{n:'死神',e:'🌑'},{n:'節制',e:'🌊'},{n:'悪魔',e:'🔗'},
+  {n:'塔',e:'⚡'},{n:'星',e:'⭐'},{n:'月',e:'🌕'},{n:'太陽',e:'☀️'},
+  {n:'審判',e:'🎺'},{n:'世界',e:'🌍'}
+];
+var SU=[{s:'ワンド',e:'🔥'},{s:'カップ',e:'💧'},{s:'ソード',e:'⚔️'},{s:'ペンタクル',e:'🪙'}];
+var RK=['エース','2','3','4','5','6','7','8','9','10','ペイジ','ナイト','クイーン','キング'];
+var ALL=[].concat(MJ);
+SU.forEach(function(s){RK.forEach(function(r){ALL.push({n:s.s+'の'+r,e:s.e});});});
+
+function draw(n){
+  var sh=ALL.slice().sort(function(){return Math.random()-0.5;});
+  return sh.slice(0,n).map(function(c){return{n:c.n,e:c.e,r:Math.random()>0.7};});
+}
+
+function crd(c,pos){
+  return '<div class="tc"><div class="tc-pos">'+pos+'</div>'
+    +'<span class="tc-em" style="'+(c.r?'display:block;transform:rotate(180deg);':'')+'">'+c.e+'</span>'
+    +'<div class="tc-name">'+c.n+'</div>'
+    +(c.r?'<div class="tc-rev">逆位置</div>':'')
+    +'</div>';
+}
+
+async function api(msg,sys){
+  var res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4000,system:sys,messages:[{role:'user',content:msg}]})});
+  var d=await res.json();
+  var raw=(d.content&&d.content[0]&&d.content[0].text)||'{}';
+  try{var m=raw.match(/\{[\s\S]*\}/);if(m)return JSON.parse(m[0]);}catch(e){}
+  return{overall:raw};
+}
+
+function rcard(title,body){
+  return '<div class="result"><div class="rh">'+title+'</div><div class="rb">'+body+'</div></div>';
+}
+
+async function go(){
+  var nm=document.getElementById('nm').value||'名無し';
+  var q=document.getElementById('q').value;
+  if(!q){alert('占いたいことをご入力ください');return;}
+  document.getElementById('out').innerHTML='<div class="loading">カードが語りかけています...</div>';
+
+  if(sp==='3'){
+    var cards=draw(3);
+    var pos=['過去','現在','未来'];
+    var sys='あなたはタロット占い師です。以下のJSON形式のみで出力してください：{"overall":"総合解釈500文字以上","past":"過去300文字以上","present":"現在300文字以上","future":"未来300文字以上","advice":"アドバイス200文字以上"}';
+    var desc=cards.map(function(c,i){return '【'+pos[i]+'】'+c.n+'（'+(c.r?'逆位置':'正位置')+'）';}).join('\n');
+    var prompt='名前:'+nm+'\n質問:'+q+'\n\n引いたカード:\n'+desc+'\n\n詳細な解釈をお願いします。';
+    try{
+      var r=await api(prompt,sys);
+      var html='<div class="cards-row">'
+        +crd(cards[0],'過去')+crd(cards[1],'現在')+crd(cards[2],'未来')
+        +'</div>';
+      html+=rcard('🃏 総合解釈',r.overall||'');
+      html+=rcard('⏮ 過去 — '+cards[0].n+(cards[0].r?'（逆）':''),r.past||'');
+      html+=rcard('⏺ 現在 — '+cards[1].n+(cards[1].r?'（逆）':''),r.present||'');
+      html+=rcard('⏭ 未来 — '+cards[2].n+(cards[2].r?'（逆）':''),r.future||'');
+      html+=rcard('🌟 アドバイス',r.advice||'');
+      html+='<div style="text-align:center;margin:20px 0;"><button class="btn" onclick="location.reload()" style="max-width:300px;">✦ もう一度引く ✦</button></div>';
+      document.getElementById('out').innerHTML=html;
+    }catch(e){
+      document.getElementById('out').innerHTML='<div class="result"><div class="rb">エラーが発生しました。</div></div>';
+    }
+  } else {
+    var cards=draw(10);
+    var pos=['現在の状況','障害・課題','潜在意識','過去の影響','可能性・目標','近い未来','自分自身','周囲の環境','希望と恐れ','最終結果'];
+    var sys='あなたはタロット占い師です。以下のJSON形式のみで出力してください：{"overall":"総合解釈700文字以上","cards":{"現在の状況":"200文字以上","障害・課題":"200文字以上","潜在意識":"200文字以上","過去の影響":"200文字以上","可能性・目標":"200文字以上","近い未来":"200文字以上","自分自身":"200文字以上","周囲の環境":"200文字以上","希望と恐れ":"200文字以上","最終結果":"200文字以上"},"advice":"アドバイス300文字以上"}';
+    var desc=cards.map(function(c,i){return '【'+pos[i]+'】'+c.n+'（'+(c.r?'逆位置':'正位置')+'）';}).join('\n');
+    var prompt='名前:'+nm+'\n質問:'+q+'\n\n引いたカード:\n'+desc+'\n\nケルトクロス展開の詳細な解釈をお願いします。';
+    try{
+      var r=await api(prompt,sys);
+      var html='<div class="cards-row">';
+      cards.forEach(function(c,i){html+=crd(c,pos[i]);});
+      html+='</div>';
+      html+=rcard('✨ 総合解釈',r.overall||'');
+      if(r.cards){pos.forEach(function(p,i){html+=rcard('🃏 '+p+' — '+cards[i].n+(cards[i].r?'（逆）':''),r.cards[p]||'');});}
+      html+=rcard('🌟 総合アドバイス',r.advice||'');
+      html+='<div style="text-align:center;margin:20px 0;"><button class="btn" onclick="location.reload()" style="max-width:300px;">✦ もう一度引く ✦</button></div>';
+      document.getElementById('out').innerHTML=html;
+    }catch(e){
+      document.getElementById('out').innerHTML='<div class="result"><div class="rb">エラーが発生しました。</div></div>';
+    }
+  }
+}
+</script>
+</body>
+</html>
