@@ -796,10 +796,20 @@ async function callAPI(userMsg, isPremium=false) {
 }
 
 function getCache(key) {
-  try { const v=localStorage.getItem(key); return v?JSON.parse(v):null; } catch { return null; }
+  try {
+    const v=localStorage.getItem(key);
+    if(!v)return null;
+    const obj=JSON.parse(v);
+    const now=Date.now();
+    if(now-obj.timestamp>24*60*60*1000){
+      localStorage.removeItem(key);
+      return null;
+    }
+    return obj.data;
+  } catch { return null; }
 }
 function setCache(key, data) {
-  try { localStorage.setItem(key, JSON.stringify(data)); } catch {}
+  try { localStorage.setItem(key, JSON.stringify({data:data,timestamp:Date.now()})); } catch {}
 }
 
 async function doReading() {
