@@ -459,8 +459,22 @@ async function callAPI(msg){
   catch{return{scores:{総合運:70,恋愛運:65,仕事運:75,健康運:70},overview:raw};}
 }
 
-function getCache(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch{return null;}}
-function setCache(k,d){try{localStorage.setItem(k,JSON.stringify(d));}catch{}}
+function getCache(k){
+  try{
+    const v=localStorage.getItem(k);
+    if(!v)return null;
+    const obj=JSON.parse(v);
+    const now=Date.now();
+    if(now-obj.timestamp>24*60*60*1000){
+      localStorage.removeItem(k);
+      return null;
+    }
+    return obj.data;
+  }catch{return null;}
+}
+function setCache(k,d){
+  try{localStorage.setItem(k,JSON.stringify({data:d,timestamp:Date.now()}));}catch{}
+}
 
 async function doReading(){
   const name=document.getElementById('name').value||'名無し';
