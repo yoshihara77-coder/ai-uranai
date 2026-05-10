@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI占い — 詳細鑑定（会員専用）</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500;700&family=Zen+Antique+Soft&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf8f5;
+  --bg2: #f3efe8;
+  --surface: #ffffff;
+  --border: #e8e0d0;
+  --gold: #b8860b;
+  --gold2: #d4a017;
+  --gold-light: #f5e6c0;
+  --deep: #2c1810;
+  --deep2: #4a2c1a;
+  --red: #8b2020;
+  --text: #2c1810;
+  --text-dim: #8a7060;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Serif JP', serif;
+  min-height: 100vh;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 50% at 10% 20%, rgba(184,134,11,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 70% at 90% 80%, rgba(139,32,32,0.04) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0 16px 80px;
+}
+
+/* ヘッダー */
+header {
+  text-align: center;
+  padding: 48px 0 32px;
+}
+.header-emblem {
+  width: 72px; height: 72px;
+  border: 2px solid var(--gold);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; color: var(--gold);
+  margin: 0 auto 20px;
+  animation: glow 4s ease-in-out infinite;
+}
+@keyframes glow {
+  0%,100% { box-shadow: 0 0 12px rgba(184,134,11,0.2); }
+  50% { box-shadow: 0 0 28px rgba(184,134,11,0.5); }
+}
+.header-badge {
+  display: inline-block;
+  background: var(--gold);
+  color: #fff;
+  font-size: 10px;
+  padding: 3px 12px;
+  border-radius: 20px;
+  letter-spacing: 0.2em;
+  margin-bottom: 12px;
+}
+.header-title {
+  font-family: 'Zen Antique Soft', serif;
+  font-size: clamp(22px, 4vw, 32px);
+  font-weight: 400;
+  color: var(--deep);
+  letter-spacing: 0.3em;
+  margin-bottom: 8px;
+}
+.header-sub {
+  font-size: 12px;
+  color: var(--text-dim);
+  letter-spacing: 0.2em;
+}
+
+/* タブ */
+.tabs {
+  display: flex;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px;
+  margin-bottom: 24px;
+  gap: 4px;
+}
+.tab {
+  flex: 1; padding: 10px 6px;
+  text-align: center; font-size: 12px;
+  letter-spacing: 0.15em; color: var(--text-dim);
+  cursor: pointer; border-radius: 6px;
+  border: none; background: none;
+  font-family: 'Noto Serif JP', serif;
+  transition: all 0.2s;
+}
+.tab.active { background: var(--deep); color: var(--gold-light); }
+
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* フォームカード */
+.form-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 12px rgba(44,24,16,0.06);
+}
+.form-title {
+  font-size: 13px; color: var(--text-dim);
+  letter-spacing: 0.25em; margin-bottom: 20px;
+  padding-bottom: 12px; border-bottom: 1px solid var(--border);
+}
+.form-row {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 14px; margin-bottom: 14px;
+}
+.form-row.single { grid-template-columns: 1fr; }
+.field label {
+  display: block; font-size: 11px;
+  color: var(--text-dim); letter-spacing: 0.2em; margin-bottom: 6px;
+}
+.field input, .field select {
+  width: 100%; background: var(--bg);
+  border: 1px solid var(--border); border-radius: 6px;
+  color: var(--text); font-family: 'Noto Serif JP', serif;
+  font-size: 14px; padding: 9px 12px; outline: none;
+  transition: border-color 0.2s; -webkit-appearance: none;
+}
+.field input:focus, .field select:focus { border-color: var(--gold); }
+
+.btn-divine {
+  width: 100%; padding: 14px;
+  background: var(--deep); border: none; border-radius: 8px;
+  color: var(--gold-light); font-family: 'Noto Serif JP', serif;
+  font-size: 14px; letter-spacing: 0.35em;
+  cursor: pointer; transition: all 0.3s; margin-top: 8px;
+}
+.btn-divine:hover { background: var(--deep2); box-shadow: 0 4px 16px rgba(44,24,16,0.3); }
+.btn-divine:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ローディング */
+.loading {
+  text-align: center; padding: 48px 20px;
+  color: var(--gold); font-size: 13px; letter-spacing: 0.3em;
+}
+.loading-bar {
+  width: 120px; height: 2px; background: var(--border);
+  margin: 16px auto 0; border-radius: 2px; overflow: hidden;
+}
+.loading-bar::after {
+  content: ''; display: block; width: 40%; height: 100%;
+  background: var(--gold); animation: slide 1.2s ease-in-out infinite;
+}
+@keyframes slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+
+/* 結果カード */
+.result-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; margin-bottom: 14px; overflow: hidden;
+  animation: fadeUp 0.5s ease-out both;
+  box-shadow: 0 2px 12px rgba(44,24,16,0.06);
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.result-header {
+  background: linear-gradient(90deg, var(--deep) 0%, var(--deep2) 100%);
+  padding: 12px 18px; display: flex; align-items: center; gap: 10px;
+}
+.result-header .icon { font-size: 15px; }
+.result-header h3 {
+  font-size: 12px; letter-spacing: 0.3em;
+  color: var(--gold-light); font-weight: 400;
+}
+.premium-badge {
+  margin-left: auto;
+  background: var(--gold); color: #fff;
+  font-size: 9px; padding: 2px 8px;
+  border-radius: 10px; letter-spacing: 0.1em;
+}
+.result-body { padding: 20px; font-size: 14px; line-height: 2.1; color: var(--text); }
+.result-section { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+.result-section:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+.result-section-title {
+  font-size: 12px; color: var(--gold); letter-spacing: 0.25em;
+  margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+}
+.result-section-title::after {
+  content: ''; flex: 1; height: 1px; background: var(--gold-light);
+}
+
+/* 天干地支 */
+.pillars {
+  display: flex; gap: 10px; justify-content: center;
+  padding: 20px; flex-wrap: wrap;
+}
+.pillar {
+  text-align: center; background: var(--bg2);
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px 18px; min-width: 72px;
+  animation: fadeUp 0.4s ease-out both;
+}
+.pillar-label { font-size: 10px; color: var(--text-dim); letter-spacing: 0.2em; margin-bottom: 8px; }
+.pillar-kan { font-size: 26px; color: var(--deep); display: block; margin-bottom: 4px; font-family: 'Zen Antique Soft', serif; }
+.pillar-chi { font-size: 26px; color: var(--red); display: block; font-family: 'Zen Antique Soft', serif; }
+
+/* メーター */
+.fortune-meter { padding: 16px 20px; }
+.meter-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.meter-row:last-child { margin-bottom: 0; }
+.meter-label { font-size: 12px; color: var(--text-dim); letter-spacing: 0.1em; width: 52px; flex-shrink: 0; }
+.meter-bar { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.meter-fill { height: 100%; background: linear-gradient(90deg, var(--deep), var(--gold)); border-radius: 3px; transition: width 1.2s ease-out; width: 0; }
+.meter-val { font-size: 12px; color: var(--gold); width: 32px; text-align: right; flex-shrink: 0; }
+
+/* 相性スコア */
+.ai-score { text-align: center; padding: 24px 20px 16px; }
+.score-num { font-size: 64px; color: var(--deep); font-weight: 300; line-height: 1; font-family: 'Zen Antique Soft', serif; }
+.score-unit { font-size: 18px; color: var(--text-dim); }
+.score-label { font-size: 11px; color: var(--text-dim); letter-spacing: 0.3em; margin-top: 8px; }
+
+.divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 16px 0; color: var(--text-dim); font-size: 11px; letter-spacing: 0.3em;
+}
+.divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* 戻るリンク */
+.back-link {
+  display: block; text-align: center;
+  font-size: 12px; color: var(--text-dim);
+  letter-spacing: 0.2em; margin-bottom: 24px;
+  text-decoration: none;
+}
+.back-link:hover { color: var(--gold); }
+
+@media (max-width: 480px) {
+  .form-row { grid-template-columns: 1fr; }
+  .pillars { gap: 8px; }
+  .pillar { min-width: 60px; padding: 10px 12px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="header-emblem">命</div>
+    <div class="header-badge">✦ 会員専用 · PREMIUM ✦</div>
+    <div class="header-title">AI 占 い</div>
+    <p class="header-sub">詳 細 鑑 定 — 恋 愛 · 仕 事 · 金 運 · 健 康</p>
+  </header>
+
+  <a href="https://ai-uranai-six.vercel.app" class="back-link">← 無料鑑定に戻る</a>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('reading', this)">命 式 鑑 定</button>
+    <button class="tab" onclick="switchTab('today', this)">今 日 の 運 勢</button>
+    <button class="tab" onclick="switchTab('aisei', this)">相 性 診 断</button>
+  </div>
+
+  <!-- 命式鑑定 -->
+  <div class="panel active" id="panel-reading">
+    <div class="form-card">
+      <div class="form-title">✦ 命 式 詳 細 鑑 定 — 恋 愛 · 仕 事 · 金 運 · 健 康 · 年 間 運</div>
+      <div class="form-row">
+        <div class="field">
+          <label>お 名 前</label>
+          <input type="text" id="name" placeholder="山田 花子">
+        </div>
+        <div class="field">
+          <label>性 別</label>
+          <select id="gender">
+            <option value="女性">女 性</option>
+            <option value="男性">男 性</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>生 年 月 日</label>
+          <input type="date" id="birthdate" max="2010-12-31">
+        </div>
+        <div class="field">
+          <label>出 生 時 刻（任意）</label>
+          <input type="time" id="birthtime">
+        </div>
+      </div>
+      <button class="btn-divine" onclick="doReading()">✦ 詳 細 鑑 定 を 見 る ✦</button>
+    </div>
+    <div id="reading-result"></div>
+  </div>
+
+  <!-- 今日の運勢 -->
+  <div class="panel" id="panel-today">
+    <div class="form-card">
+      <div class="form-title">☀ 今 日 の 詳 細 運 勢 — 時 間 帯 別 · ア ド バ イ ス 付</div>
+      <div class="form-row single">
+        <div class="field">
+          <label>お 名 前</label>
+          <input type="text" id="name-today" placeholder="山田 花子">
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="field">
+          <label>生 年 月 日</label>
+          <input type="date" id="birthdate-today" max="2010-12-31">
+        </div>
+      </div>
+      <button class="btn-divine" onclick="doToday()">✦ 今 日 の 詳 細 運 勢 を 見 る ✦</button>
+    </div>
+    <div id="today-result"></div>
+  </div>
+
+  <!-- 相性診断 -->
+  <div class="panel" id="panel-aisei">
+    <div class="form-card">
+      <div class="form-title">☯ 詳 細 相 性 診 断 — 恋 愛 · 仕 事 · 魂 の 縁</div>
+      <div class="divider">一 人 目</div>
+      <div class="form-row">
+        <div class="field">
+          <label>お 名 前</label>
+          <input type="text" id="name-a" placeholder="山田 花子">
+        </div>
+        <div class="field">
+          <label>生 年 月 日</label>
+          <input type="date" id="birth-a" max="2010-12-31">
+        </div>
+      </div>
+      <div class="divider">二 人 目</div>
+      <div class="form-row">
+        <div class="field">
+          <label>お 名 前</label>
+          <input type="text" id="name-b" placeholder="田中 太郎">
+        </div>
+        <div class="field">
+          <label>生 年 月 日</label>
+          <input type="date" id="birth-b" max="2010-12-31">
+        </div>
+      </div>
+      <button class="btn-divine" onclick="doAisei()">✦ 詳 細 相 性 を 診 断 す る ✦</button>
+    </div>
+    <div id="aisei-result"></div>
+  </div>
+</div>
+
+<script>
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-' + tab).classList.add('active');
+}
+
+const KAN = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+const CHI = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+const KAN_ELEM = {甲:'木',乙:'木',丙:'火',丁:'火',戊:'土',己:'土',庚:'金',辛:'金',壬:'水',癸:'水'};
+const KAN_YIN  = {甲:'陽',乙:'陰',丙:'陽',丁:'陰',戊:'陽',己:'陰',庚:'陽',辛:'陰',壬:'陽',癸:'陰'};
+
+const SETSUIRI = {
+  1940:[6,5,6,5,5,6,7,7,8,8,8,7],1941:[5,4,6,5,5,6,7,8,8,8,7,7],
+  1942:[6,4,6,5,6,6,7,8,8,8,8,7],1943:[6,5,6,6,6,6,7,8,8,8,8,8],
+  1944:[6,5,6,5,5,6,7,7,8,8,8,7],1945:[5,4,6,5,5,6,7,8,8,8,7,7],
+  1946:[6,4,6,5,6,6,7,8,8,8,8,7],1947:[6,5,6,6,6,6,7,8,8,8,8,8],
+  1948:[6,5,6,5,5,6,7,7,8,8,8,7],1949:[5,4,6,5,5,6,7,8,8,8,7,7],
+  1950:[6,4,6,5,6,6,7,8,8,8,8,7],1951:[6,5,6,6,6,6,7,8,8,8,8,8],
+  1952:[6,5,6,5,5,6,7,7,8,8,8,7],1953:[5,4,6,5,5,6,7,8,8,8,7,7],
+  1954:[6,4,6,5,6,6,7,8,8,8,8,7],1955:[6,5,6,6,6,6,7,8,8,8,8,7],
+  1956:[6,5,6,5,5,6,7,7,8,8,8,7],1957:[5,4,6,5,5,6,7,8,8,8,7,7],
+  1958:[6,4,6,5,6,6,7,8,8,8,8,7],1959:[6,5,6,6,6,6,7,8,8,8,8,7],
+  1960:[6,5,6,5,5,6,7,7,8,8,8,7],1961:[5,4,6,5,5,6,7,7,8,8,7,7],
+  1962:[6,4,6,5,6,6,7,8,8,8,8,7],1963:[6,4,6,5,6,6,7,8,8,8,8,7],
+  1964:[6,5,6,5,5,6,7,7,8,8,8,7],1965:[5,4,6,5,5,6,7,7,8,8,7,7],
+  1966:[6,4,6,5,6,6,7,8,8,8,8,7],1967:[6,4,6,5,6,6,7,8,8,8,8,7],
+  1968:[6,5,6,5,5,6,7,7,8,8,8,7],1969:[5,4,5,5,5,6,7,7,8,8,7,7],
+  1970:[6,4,6,5,6,6,7,8,8,8,8,7],1971:[6,4,6,5,6,6,7,8,8,8,8,7],
+  1972:[6,5,6,5,5,6,7,7,8,8,8,7],1973:[5,4,5,5,5,6,7,7,8,8,7,7],
+  1974:[6,4,6,5,6,6,7,8,8,8,8,7],1975:[6,4,6,5,6,6,7,8,8,8,8,7],
+  1976:[6,5,6,5,5,6,7,7,8,8,7,7],1977:[5,4,5,5,5,6,7,7,8,8,7,7],
+  1978:[6,4,6,5,6,6,7,8,8,8,8,7],1979:[6,4,6,5,6,6,7,8,8,8,8,7],
+  1980:[6,5,6,5,5,6,7,7,8,8,7,7],1981:[5,4,5,5,5,6,7,7,8,8,7,7],
+  1982:[6,4,6,5,6,6,7,8,8,8,8,7],1983:[6,4,6,5,6,6,7,8,8,8,8,7],
+  1984:[6,4,6,5,5,6,7,7,8,8,7,7],1985:[5,4,5,5,5,6,7,7,8,8,7,7],
+  1986:[6,4,6,5,6,6,7,8,8,8,8,7],1987:[6,4,6,5,6,6,7,8,8,8,8,7],
+  1988:[6,4,6,4,5,6,7,7,8,8,7,7],1989:[5,4,5,5,5,6,7,7,8,8,7,7],
+  1990:[6,4,6,5,5,6,7,8,8,8,8,7],1991:[6,4,6,5,6,6,7,8,8,8,8,7],
+  1992:[6,4,6,4,5,6,7,7,8,8,7,7],1993:[5,4,5,5,5,6,7,7,8,8,7,7],
+  1994:[6,4,6,5,5,6,7,8,8,8,8,7],1995:[6,4,6,5,6,6,7,8,8,8,8,7],
+  1996:[6,4,6,4,5,6,7,7,8,8,7,7],1997:[5,4,5,5,5,6,7,7,8,8,7,7],
+  1998:[6,4,6,5,5,6,7,8,8,8,8,7],1999:[6,4,6,5,6,6,7,8,8,8,7,7],
+  2000:[6,4,6,4,5,6,7,7,8,8,7,7],2001:[5,4,5,5,5,6,7,7,8,8,7,7],
+  2002:[6,4,6,5,5,6,7,8,8,8,8,7],2003:[6,4,6,5,6,6,7,8,8,8,7,7],
+  2004:[6,4,6,4,5,6,7,7,8,8,7,7],2005:[5,4,5,5,5,6,7,7,8,8,7,7],
+  2006:[6,4,6,5,5,6,7,8,8,8,8,7],2007:[6,4,6,5,6,6,7,8,8,8,7,7],
+  2008:[6,4,6,4,5,6,7,7,8,8,7,7],2009:[5,4,5,5,5,6,7,7,8,8,7,7],
+  2010:[6,4,6,5,5,6,7,7,8,8,7,7],2011:[6,4,6,5,6,6,7,8,8,8,7,7],
+  2012:[6,4,5,4,5,6,7,7,8,8,7,7],2013:[5,4,5,5,5,6,7,7,8,8,7,7],
+  2014:[6,4,6,5,5,6,7,7,8,8,7,7],2015:[6,4,6,5,6,6,7,8,8,8,7,7],
+  2016:[6,4,5,4,5,6,7,7,8,8,7,7],2017:[5,4,5,5,5,6,7,7,8,8,7,7],
+  2018:[6,4,6,5,5,6,7,7,8,8,7,7],2019:[6,4,6,5,6,6,7,8,8,8,7,7],
+  2020:[6,4,5,4,5,5,7,7,8,8,7,7],2021:[5,3,5,4,5,6,7,7,8,8,7,7],
+  2022:[5,4,6,5,5,6,7,7,8,8,7,7],2023:[6,4,6,5,6,6,7,8,8,8,7,7],
+  2024:[6,4,5,4,5,5,7,7,8,8,7,7],2025:[5,3,5,4,5,6,7,7,8,8,7,7],
+  2026:[5,4,6,5,5,6,7,7,8,8,7,7],
+};
+
+function getSanmeiMonth(y,m,d){const t=SETSUIRI[y];if(!t)return m;if(d<t[m-1])return m-1===0?12:m-1;return m;}
+function getSanmeiYear(y,m,d){const t=SETSUIRI[y];if(!t)return y;if(m===1)return y-1;if(m===2&&d<t[1])return y-1;return y;}
+function getYearPillar(y){return{kan:KAN[(y-4+4000)%10],chi:CHI[(y-4+4800)%12]};}
+function getMonthPillar(sy,sm){const c=[1,2,3,4,5,6,7,8,9,10,11,0];const b=[1,3,5,7,9,1,3,5,7,9];return{kan:KAN[((b[(sy-4+4000)%10]+(sm-1))%10)],chi:CHI[c[sm-1]]};}
+function getDayPillar(s){const d=new Date(s+'T00:00:00+09:00');const y=d.getFullYear(),m=d.getMonth()+1,day=d.getDate();const a=Math.floor((14-m)/12),yr=y+4800-a,mn=m+12*a-3;const jd=day+Math.floor((153*mn+2)/5)+365*yr+Math.floor(yr/4)-Math.floor(yr/100)+Math.floor(yr/400)-32045;const base=jd-2299161+10;return{kan:KAN[((base%10)+10)%10],chi:CHI[((base%12)+12)%12]};}
+function calcPillars(s){const d=new Date(s),y=d.getFullYear(),m=d.getMonth()+1,day=d.getDate();const sm=getSanmeiMonth(y,m,day),sy=getSanmeiYear(y,m,day);return{year:getYearPillar(sy),month:getMonthPillar(sy,sm),day:getDayPillar(s)};}
+
+function renderPillars(p){return`<div class="pillars">${[['年柱',p.year],['月柱',p.month],['日柱',p.day]].map(([l,v],i)=>`<div class="pillar" style="animation-delay:${i*0.12}s"><div class="pillar-label">${l}</div><span class="pillar-kan">${v.kan}</span><span class="pillar-chi">${v.chi}</span></div>`).join('')}</div>`;}
+function renderMeters(s){return`<div class="fortune-meter">${Object.entries(s).map(([l,v])=>`<div class="meter-row"><span class="meter-label">${l}</span><div class="meter-bar"><div class="meter-fill" data-val="${v}"></div></div><span class="meter-val">${v}</span></div>`).join('')}</div>`;}
+function animateMeters(){setTimeout(()=>{document.querySelectorAll('.meter-fill').forEach(el=>{el.style.width=el.dataset.val+'%';});},150);}
+function showLoading(id){document.getElementById(id).innerHTML=`<div class="result-card"><div class="loading">天 命 を 読 み 解 い て お り ま す<div class="loading-bar"></div></div></div>`;}
+
+const API_SYSTEM = `あなたは算命学の最高位の占い師です。以下のJSON形式のみで出力してください：
+{
+  "scores": {"総合運":75,"恋愛運":60,"仕事運":80,"健康運":70},
+  "overview": "命式の総合概要（600文字以上）。本質・気質・人生のテーマを深く詳しく",
+  "element": "五行のバランスと特徴（200文字以上）",
+  "life_theme": "人生のテーマと使命（250文字以上）",
+  "love": "恋愛運の詳細分析（600文字以上）。現在の恋愛状況・理想のパートナー・出会いの時期・注意点・開運法を含む",
+  "work": "仕事運・金運の詳細分析（600文字以上）。天職・才能・転機の時期・金運の流れ・開運法を含む",
+  "health": "健康運の詳細分析（400文字以上）。体質の特徴・注意すべき時期・養生法・開運法を含む",
+  "yearly": "今後1年の運気の流れ（500文字以上）。月ごとの運気変動・チャンスの時期・注意の時期を含む",
+  "advice": "総合開運アドバイス（300文字以上）。ラッキーカラー・吉方位・開運行動・注意事項を含む"
+}`;
+
+async function callAPI(msg){
+  const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4000,system:API_SYSTEM,messages:[{role:'user',content:msg}]})});
+  const data=await res.json();
+  const raw=data.content?.[0]?.text||'{}';
+  try{const m=raw.match(/\{[\s\S]*\}/);if(m)return JSON.parse(m[0]);return{scores:{総合運:70,恋愛運:65,仕事運:75,健康運:70},overview:raw};}
+  catch{return{scores:{総合運:70,恋愛運:65,仕事運:75,健康運:70},overview:raw};}
+}
+
+function getCache(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch{return null;}}
+function setCache(k,d){try{localStorage.setItem(k,JSON.stringify(d));}catch{}}
+
+async function doReading(){
+  const name=document.getElementById('name').value||'名無し';
+  const bd=document.getElementById('birthdate').value;
+  const gender=document.getElementById('gender').value;
+  const bt=document.getElementById('birthtime').value;
+  if(!bd){alert('生年月日をご入力ください');return;}
+  const key='premium_reading_'+bd+'_'+gender;
+  const pillars=calcPillars(bd);
+  const cached=getCache(key);
+
+  function render(r){
+    document.getElementById('reading-result').innerHTML=`
+    <div class="result-card" style="animation-delay:0s">
+      <div class="result-header"><span class="icon">☯</span><h3>命 式 — ${name}の天干地支</h3><span class="premium-badge">PREMIUM</span></div>
+      ${renderPillars(pillars)}
+    </div>
+    <div class="result-card" style="animation-delay:0.1s">
+      <div class="result-header"><span class="icon">✦</span><h3>総 合 鑑 定</h3><span class="premium-badge">PREMIUM</span></div>
+      <div class="result-body">
+        <div class="result-section"><div class="result-section-title">◈ 命 式 の 概 要</div><p style="line-height:2.1;">${r.overview||''}</p></div>
+        <div class="result-section"><div class="result-section-title">◈ 五 行 の バ ラ ン ス</div><p style="line-height:2.1;">${r.element||''}</p></div>
+        <div class="result-section"><div class="result-section-title">◈ 人 生 の テ ー マ</div><p style="line-height:2.1;">${r.life_theme||''}</p></div>
+      </div>
+    </div>
+    <div class="result-card" style="animation-delay:0.2s">
+      <div class="result-header"><span class="icon">❤</span><h3>恋 愛 運</h3><span class="premium-badge">PREMIUM</span></div>
+      <div class="result-body"><p style="line-height:2.1;">${r.love||''}</p></div>
+    </div>
+    <div class="result-card" style="animation-delay:0.25s">
+      <div class="result-header"><span class="icon">💼</span><h3>仕 事 運 · 金 運</h3><span class="premium-badge">PREMIUM</span></div>
+      <div class="result-body"><p style="line-height:2.1;">${r.work||''}</p></div>
+    </div>
+    <div class="result-card" style="animation-delay:0.3s">
+      <div class="result-header"><span class="icon">🌿</span><h3>健 康 運</h3><span class="premium-badge">PREMIUM</span></div>
+      <div class="result-body"><p style="line-height:2.1;">${r.health||''}</p></div>
+    </div>
+    <div class="result-card" style="animation-delay:0.35s">
+      <div class="result-header"><span class="icon">📅</span><h3>今 後 1 年 の 運 気</h3><span class="premium-badge">PREMIUM</span></div>
+      <div class="result-body"><p style="line-height:2.1;">${r.yearly||''}</p></div>
+    </div>
+    <div class="result-card" style="animation-delay:0.4s">
+      <div class="result-header"><span class="icon">◈</span><h3>運 勢 指 数</h3><span class="premium-badge">PREMIUM</span></div>
+      ${renderMeters(r.scores)}
+    </div>
+    <div class="result-card" style="animation-delay:0.45s">
+      <div class="result-header"><span class="icon">🌟</span><h3>開 運 ア ド バ イ ス</h3><span class="premium-badge">PREMIUM</span></div>
+      <div class="result-body"><p style="line-height:2.1;">${r.advice||''}</p></div>
+    </div>`;
+    animateMeters();
+  }
+
+  if(cached){render(cached);return;}
+  showLoading('reading-result');
+  const prompt=`名前:${name}、性別:${gender}、生年月日:${bd}${bt?'、出生時刻:'+bt:''}
+年柱:${pillars.year.kan}${pillars.year.chi}、月柱:${pillars.month.kan}${pillars.month.chi}、日柱:${pillars.day.kan}${pillars.day.chi}
+算命学で命式・宿命・恋愛運・仕事運・金運・健康運・年間運を詳しく鑑定してください。`;
+  try{const r=await callAPI(prompt);setCache(key,r);render(r);}
+  catch(e){document.getElementById('reading-result').innerHTML='<div class="result-card"><div class="result-body">エラーが発生しました。</div></div>';}
+}
+
+async function doToday(){
+  const name=document.getElementById('name-today').value||'名無し';
+  const bd=document.getElementById('birthdate-today').value;
+  if(!bd){alert('生年月日をご入力ください');return;}
+  const todayStr=new Date().toISOString().split('T')[0];
+  const key='premium_today_'+bd+'_'+todayStr;
+  const cached=getCache(key);
+  const today=new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+
+  function render(r){
+    document.getElementById('today-result').innerHTML=`
+    <div class="result-card">
+      <div class="result-header"><span class="icon">☀</span><h3>今 日 の 詳 細 運 勢 — ${today}</h3><span class="premium-badge">PREMIUM</span></div>
+      <div class="result-body">
+        <div class="result-section"><div class="result-section-title">◈ 今 日 の 運 勢</div><p style="line-height:2.1;">${r.overview||r.reading||''}</p></div>
+        ${r.love?`<div class="result-section"><div class="result-section-title">◈ 今 日 の 恋 愛 運</div><p style="line-height:2.1;">${r.love}</p></div>`:''}
+        ${r.work?`<div class="result-section"><div class="result-section-title">◈ 今 日 の 仕 事 運</div><p style="line-height:2.1;">${r.work}</p></div>`:''}
+        ${r.advice?`<div class="result-section"><div class="result-section-title">◈ 今 日 の ア ド バ イ ス</div><p style="line-height:2.1;">${r.advice}</p></div>`:''}
+      </div>
+    </div>
+    <div class="result-card">
+      <div class="result-header"><span class="icon">◈</span><h3>今 日 の 運 勢 指 数</h3><span class="premium-badge">PREMIUM</span></div>
+      ${renderMeters(r.scores)}
+    </div>`;
+    animateMeters();
+  }
+
+  if(cached){render(cached);return;}
+  showLoading('today-result');
+  const pillars=calcPillars(bd);
+  const todayPillar=getDayPillar(todayStr);
+  const prompt=`名前:${name}、生年月日:${bd}、日柱:${pillars.day.kan}${pillars.day.chi}
+今日(${today})の日柱:${todayPillar.kan}${todayPillar.chi}
+算命学で今日の運勢を詳しく鑑定。overview・love・work・adviceそれぞれ300文字以上で書いてください。`;
+  try{const r=await callAPI(prompt);setCache(key,r);render(r);}
+  catch(e){document.getElementById('today-result').innerHTML='<div class="result-card"><div class="result-body">エラーが発生しました。</div></div>';}
+}
+
+async function doAisei(){
+  const nameA=document.getElementById('name-a').value||'一人目';
+  const nameB=document.getElementById('name-b').value||'二人目';
+  const bdA=document.getElementById('birth-a').value;
+  const bdB=document.getElementById('birth-b').value;
+  if(!bdA||!bdB){alert('両方の生年月日をご入力ください');return;}
+  const key='premium_aisei_'+[bdA,bdB].sort().join('_');
+  const cached=getCache(key);
+
+  function render(r){
+    const score=r.scores?.['総合相性']||r.scores?.['総合運']||75;
+    document.getElementById('aisei-result').innerHTML=`
+    <div class="result-card">
+      <div class="result-header"><span class="icon">☯</span><h3>${nameA} × ${nameB}</h3><span class="premium-badge">PREMIUM</span></div>
+      <div class="ai-score"><div class="score-num">${score}<span class="score-unit"> 点</span></div><div class="score-label">総 合 相 性 ス コ ア</div></div>
+    </div>
+    <div class="result-card">
+      <div class="result-header"><span class="icon">✦</span><h3>詳 細 相 性 鑑 定</h3><span class="premium-badge">PREMIUM</span></div>
+      <div class="result-body"><p style="line-height:2.1;">${r.overview||r.reading||''}</p></div>
+    </div>
+    ${r.love?`<div class="result-card"><div class="result-header"><span class="icon">❤</span><h3>恋 愛 相 性</h3><span class="premium-badge">PREMIUM</span></div><div class="result-body"><p style="line-height:2.1;">${r.love}</p></div></div>`:''}
+    ${r.work?`<div class="result-card"><div class="result-header"><span class="icon">💼</span><h3>仕 事 相 性</h3><span class="premium-badge">PREMIUM</span></div><div class="result-body"><p style="line-height:2.1;">${r.work}</p></div></div>`:''}
+    <div class="result-card">
+      <div class="result-header"><span class="icon">◈</span><h3>相 性 詳 細 指 数</h3><span class="premium-badge">PREMIUM</span></div>
+      ${renderMeters(r.scores)}
+    </div>`;
+    animateMeters();
+  }
+
+  if(cached){render(cached);return;}
+  showLoading('aisei-result');
+  const pA=calcPillars(bdA),pB=calcPillars(bdB);
+  const prompt=`【${nameA}】生年月日:${bdA}、日柱:${pA.day.kan}${pA.day.chi}（${KAN_ELEM[pA.day.kan]}・${KAN_YIN[pA.day.kan]}）
+【${nameB}】生年月日:${bdB}、日柱:${pB.day.kan}${pB.day.chi}（${KAN_ELEM[pB.day.kan]}・${KAN_YIN[pB.day.kan]}）
+算命学で二人の詳細相性を鑑定。overview・love・workそれぞれ400文字以上。scoresは{"総合相性":85,"恋愛相性":78,"仕事相性":72,"魂の縁":90}形式で。`;
+  try{const r=await callAPI(prompt);setCache(key,r);render(r);}
+  catch(e){document.getElementById('aisei-result').innerHTML='<div class="result-card"><div class="result-body">エラーが発生しました。</div></div>';}
+}
+</script>
+</body>
+</html>
